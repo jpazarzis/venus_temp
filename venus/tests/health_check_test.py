@@ -1,71 +1,38 @@
+"""Tests venus.make_health_checker"""
+
 import os
 import unittest
 
 from venus import make_health_checker
-
-_CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
-_RESOURCES_DIR = os.path.join(_CURRENT_DIR, 'resources')
-_UNHEALTHY_HEALTH_CHECKS = os.path.join(
-    _RESOURCES_DIR, 'failing-health-checks.yaml')
-_HEALTHY_HEALTH_CHECKS = os.path.join(
-    _RESOURCES_DIR, 'success-health-checks.yaml')
-
-_INALID_YAMLS = [
-    os.path.join(_RESOURCES_DIR, 'invalid_1.yaml'),
-    os.path.join(_RESOURCES_DIR, 'invalid_2.yaml'),
-]
-
-_INSTRUCTIONS_1 = {
-    'health_checks': {
-        'check_redis_connection':
-            {
-                'callable': 'venus.verify_fileaccess',
-                'parameters': {
-                    'host': 'localhost',
-                    'user': 'root',
-                    'passwd': 'vagrant'
-                }
-            }
-    }
-}
-
-_INSTRUCTIONS_2 = {
-    'health_checks':
-        {
-            'check_redis_connection':
-                {
-                    'parameters':
-                        {
-                            'user': 'root',
-                            'host': 'localhost',
-                            'passwd': 'ΧΧΧΧ'
-                        },
-                    'callable': 'venus.verify_fileaccess'
-                },
-            'a_malfunctioning_example':
-                {
-                    'callable': 'venus.raising_exception'
-                }
-        }
-}
+from venus import HealthCheckerError
 
 
-class TestHealthCheck(unittest.TestCase):
+class TestLoadingFromYaml(unittest.TestCase):
+    CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+    YAML_DIR = os.path.join(CURRENT_DIR, 'resources', 'yaml-samples')
+    UNHEALTHY_YAML = os.path.join(YAML_DIR, 'unhealthy.yaml')
+    HEALTHY_YAML = os.path.join(YAML_DIR, 'healthy.yaml')
+
+    INALID_YAMLS = [
+        os.path.join(YAML_DIR, 'invalid.yaml'),
+        os.path.join(YAML_DIR, 'bad-structure.yaml'),
+    ]
+
     def test_unsupported_filename(self):
-        with self.assertRaises(NameError):
+        with self.assertRaises(HealthCheckerError):
             make_health_checker('_unsupported')
 
     def test_non_existing_yaml(self):
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(HealthCheckerError):
             make_health_checker('_unsupported.yaml')
 
     def test_invalid_yaml(self):
-        for invalid_file in _INALID_YAMLS:
-            with self.assertRaises(SyntaxError):
+        for invalid_file in self.INALID_YAMLS:
+            with self.assertRaises(HealthCheckerError):
                 make_health_checker(invalid_file)
 
     def test_unhealthy_from_yaml(self):
-        health_checks = make_health_checker(_UNHEALTHY_HEALTH_CHECKS)
+        health_checks = make_health_checker(self.UNHEALTHY_YAML)
         self.assertEqual(len(health_checks), 2)
         retrieved_names = [hc.name for hc in health_checks]
         expected_names = ['a_malfunctioning_example', 'check_redis_connection']
@@ -74,9 +41,8 @@ class TestHealthCheck(unittest.TestCase):
         self.assertTrue(isinstance(health['status'], bool))
         self.assertFalse(health['status'])
 
-
     def test_healthy_from_yaml(self):
-        health_checks = make_health_checker(_HEALTHY_HEALTH_CHECKS)
+        health_checks = make_health_checker(self.HEALTHY_YAML)
         self.assertEqual(len(health_checks), 2)
         retrieved_names = [hc.name for hc in health_checks]
         expected_names = ['check_mysql',
@@ -89,20 +55,87 @@ class TestHealthCheck(unittest.TestCase):
         self.assertTrue(isinstance(health['status'], bool))
         self.assertTrue(health['status'])
 
+
+class TestLoadingFromDict(unittest.TestCase):
+    VALID_INSTRUCTIONS = {
+        'health_checks':
+            {
+                'check_redis_connection':
+                    {
+                        'parameters':
+                            {
+                                'user': 'root',
+                                'host': 'localhost',
+                                'passwd': 'ΧΧΧΧ'
+                            },
+                        'callable': 'venus.verify_fileaccess'
+                    },
+                'a_malfunctioning_example':
+                    {
+                        'callable': 'venus.raising_exception'
+                    }
+            }
+    }
+
+    INVALID_INSTRUCTIONS = [123, ['a'], {}, lambda: 1]
+
     def test_invalid_instructions(self):
-        invalid_instructions = [
-            123,
-            ['a'],
-            {},
-            lambda: 1
-        ]
-        for instruction in invalid_instructions:
-            with self.assertRaises(ValueError):
+        for instruction in self.INVALID_INSTRUCTIONS:
+            with self.assertRaises(HealthCheckerError):
                 make_health_checker(instruction)
 
     def test_loading_from_dict(self):
-        health_checks = make_health_checker(_INSTRUCTIONS_2)
+        health_checks = make_health_checker(self.VALID_INSTRUCTIONS)
         self.assertEqual(len(health_checks), 2)
         retrieved_names = [hc.name for hc in health_checks]
         expected_names = ['a_malfunctioning_example', 'check_redis_connection']
         self.assertListEqual(sorted(retrieved_names), sorted(expected_names))
+
+
+class TestLoadingFromJson(unittest.TestCase):
+    CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+    JSON_DIR = os.path.join(CURRENT_DIR, 'resources', 'json-samples')
+    UNHEALTHY_JSON = os.path.join(JSON_DIR, 'unhealthy.json')
+    HEALTHY_JSON = os.path.join(JSON_DIR, 'healthy.json')
+
+    INALID_JSONS = [
+        os.path.join(JSON_DIR, 'invalid.json'),
+        os.path.join(JSON_DIR, 'bad-structure.json'),
+    ]
+
+    def test_unsupported_filename(self):
+        with self.assertRaises(HealthCheckerError):
+            make_health_checker('_unsupported')
+
+    def test_non_existing_json(self):
+        with self.assertRaises(HealthCheckerError):
+            make_health_checker('_unsupported.json')
+
+    def test_invalid_json(self):
+        for invalid_file in self.INALID_JSONS:
+            with self.assertRaises(HealthCheckerError):
+                make_health_checker(invalid_file)
+
+    def test_unhealthy_from_json(self):
+        health_checks = make_health_checker(self.UNHEALTHY_JSON)
+        self.assertEqual(len(health_checks), 2)
+        retrieved_names = [hc.name for hc in health_checks]
+        expected_names = ['a_malfunctioning_example', 'check_redis_connection']
+        self.assertListEqual(sorted(retrieved_names), sorted(expected_names))
+        health = health_checks()
+        self.assertTrue(isinstance(health['status'], bool))
+        self.assertFalse(health['status'])
+
+    def test_healthy_from_json(self):
+        health_checks = make_health_checker(self.HEALTHY_JSON)
+        self.assertEqual(len(health_checks), 2)
+        retrieved_names = [hc.name for hc in health_checks]
+        expected_names = ['check_mysql',
+                          'check_redis_connection']
+        self.assertListEqual(sorted(retrieved_names),
+                             sorted(expected_names))
+
+        health = health_checks()
+
+        self.assertTrue(isinstance(health['status'], bool))
+        self.assertTrue(health['status'])

@@ -1,8 +1,11 @@
-import yaml
 import importlib
+import json
+import yaml
 
 _SUPPORTED_FILE_EXTENSIONS = ['.yaml', '.json']
 
+class HealthCheckerError(Exception):
+    """Used for any exception raised by HealthChecker."""
 
 def make_health_checker(instructions):
     """Makes a health checker object.
@@ -18,29 +21,22 @@ def make_health_checker(instructions):
     :raises SyntaxError: File is invalid.
     :raises ValueError: Invalid instructions were passed.
     """
-    if isinstance(instructions, str):
-        # instructions must point to a filename.
-        if not any(
-                instructions.endswith(extension)
-                for extension in _SUPPORTED_FILE_EXTENSIONS):
-            raise NameError('Invalid Filename: % s ' % instructions)
-        elif instructions.endswith('.yaml'):
-            with open(instructions) as stream:
-                try:
+    try:
+        if isinstance(instructions, str):
+            if instructions.endswith('.yaml'):
+                with open(instructions) as stream:
                     instructions = yaml.load(stream)
-                except yaml.parser.ParserError:
-                    raise SyntaxError(
-                        "Invalid format in yaml file %s" % instructions
-                    )
+            elif instructions.endswith('.json'):
+                instructions = json.load(open(instructions))
+    except:
+        raise HealthCheckerError("Failed to parse file.")
 
     if not isinstance(instructions, dict) or not instructions:
-        raise ValueError("Invalid instructions: %s" % instructions)
+        raise HealthCheckerError("Invalid instructions.")
 
     heatlh_check_nodes = instructions.get('health_checks')
     if not heatlh_check_nodes:
-        raise SyntaxError(
-            "Invalid format in health check instructions."
-        )
+        raise HealthCheckerError("Invalid instructions.")
 
     assert isinstance(heatlh_check_nodes, dict)
 
@@ -75,6 +71,7 @@ class _HealthCheck:
     The health check which w
 
     """
+
     def __init__(self, name, **kwargs):
         self.name = name
         for key, value in kwargs.items():
