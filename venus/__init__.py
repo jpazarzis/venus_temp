@@ -39,6 +39,7 @@ called health_checks) similar to the following::
 
     >>> def check_redis(server, passwd):
     >>>    # Apply your checks and return a dict
+    ... # doctest: +SKIP
 
 You can now use this library as follows::
 
