@@ -4,8 +4,10 @@ import yaml
 
 _SUPPORTED_FILE_EXTENSIONS = ['.yaml', '.json']
 
+
 class HealthCheckerError(Exception):
     """Used for any exception raised by HealthChecker."""
+
 
 def make_health_checker(instructions):
     """Makes a health checker object.
@@ -16,10 +18,9 @@ def make_health_checker(instructions):
             - A yaml file containing the health checks.
             - A json file containing the health checks.
 
-    :raises InvalidFilenameError: Unsupported filename.
-    :raises FileNotFoundError: File does not exist.
-    :raises SyntaxError: File is invalid.
-    :raises ValueError: Invalid instructions were passed.
+    :raises HealthCheckerError: Redirects any possible exception that can raised
+        to this generic exception.  Doing so to simplify the behaviour of the
+        called who should only have a single catching scope.
     """
     try:
         if isinstance(instructions, str):
@@ -29,14 +30,14 @@ def make_health_checker(instructions):
             elif instructions.endswith('.json'):
                 instructions = json.load(open(instructions))
     except:
-        raise HealthCheckerError("Failed to parse file.")
+        raise HealthCheckerError
 
     if not isinstance(instructions, dict) or not instructions:
-        raise HealthCheckerError("Invalid instructions.")
+        raise HealthCheckerError
 
     heatlh_check_nodes = instructions.get('health_checks')
     if not heatlh_check_nodes:
-        raise HealthCheckerError("Invalid instructions.")
+        raise HealthCheckerError
 
     assert isinstance(heatlh_check_nodes, dict)
 
