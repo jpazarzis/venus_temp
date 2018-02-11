@@ -23,7 +23,7 @@ health_checks:
 ```
 
 json sample: health_check.json
-```
+```json
 {
    "health_checks":{
       "check_redis_connection":{
