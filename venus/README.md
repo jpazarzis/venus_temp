@@ -64,7 +64,7 @@ checker = make_health_checker('health_check.yaml')
 health_check = checker()
 ``` 
 
-####Exception handling
+#### Exception handling
 
 This library is expected to raise only this exception: 
 
