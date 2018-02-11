@@ -1,7 +1,7 @@
-###health_checker - A library to allow for automatic health checks.
+### health_checker - A library to allow for automatic health checks.
 
 
-####Features
+#### Features
 
 Exposes a function called make_health_checker which receives a description of
 the applicable tests which can be passed as yaml or json files or as a python
