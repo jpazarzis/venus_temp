@@ -35,12 +35,12 @@ health_checks:
         passwd: $PASSWORD
 
 and the existence of a function check_redis (which is implemented in a package
-called health_checks) similar to the following:
+called health_checks) similar to the following::
 
 >>> def check_redis(server, passwd):
 >>>    # Apply your checks and return a dict
 
-You can now use this library as follows:
+You can now use this library as follows::
 
 >>> checker = make_health_checker()
 >>> health_check = checker()
