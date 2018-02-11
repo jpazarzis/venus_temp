@@ -1,13 +1,15 @@
-"""Tests venus.make_health_checker"""
+"""Tests rapidlib.health_check.make_health_checker"""
 
-import unittest.mock as mock
 import os
 import unittest
+import unittest.mock as mock
 
-from venus import make_health_checker
-from venus import HealthCheckerError
-import venus.tests.dummy_callables as dummy_callables
-import venus.health_check
+import rapidlib.health_check.health_check
+import rapidlib.health_check.tests.dummy_callables as dummy_callables
+from rapidlib.health_check import HealthCheckerError
+from rapidlib.health_check import check_health
+from rapidlib.health_check.health_check import _make_health_checker
+
 
 class TestLoadingFromYaml(unittest.TestCase):
     CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -24,19 +26,19 @@ class TestLoadingFromYaml(unittest.TestCase):
 
     def test_unsupported_filename(self):
         with self.assertRaises(HealthCheckerError):
-            make_health_checker('_unsupported')
+            check_health('_unsupported')
 
     def test_non_existing_yaml(self):
         with self.assertRaises(HealthCheckerError):
-            make_health_checker('_unsupported.yaml')
+            check_health('_unsupported.yaml')
 
     def test_invalid_yaml(self):
         for invalid_file in self.INALID_YAMLS:
             with self.assertRaises(HealthCheckerError):
-                make_health_checker(invalid_file)
+                check_health(invalid_file)
 
     def test_unhealthy_from_yaml(self):
-        health_checks = make_health_checker(self.UNHEALTHY_YAML)
+        health_checks = _make_health_checker(self.UNHEALTHY_YAML)
         self.assertEqual(len(health_checks), 2)
         retrieved_names = [hc.name for hc in health_checks]
         expected_names = ['a_malfunctioning_example', 'check_redis_connection']
@@ -46,7 +48,7 @@ class TestLoadingFromYaml(unittest.TestCase):
         self.assertFalse(health['status'])
 
     def test_healthy_from_yaml(self):
-        health_checks = make_health_checker(self.HEALTHY_YAML)
+        health_checks = _make_health_checker(self.HEALTHY_YAML)
         self.assertEqual(len(health_checks), 2)
         retrieved_names = [hc.name for hc in health_checks]
         expected_names = ['check_mysql',
@@ -61,14 +63,13 @@ class TestLoadingFromYaml(unittest.TestCase):
 
     def test_nonexisting_env_variable(self):
         with self.assertRaises(HealthCheckerError):
-            make_health_checker(self.USING_ENV_VAR)
+            check_health(self.USING_ENV_VAR)
 
-    @mock.patch.object(venus.health_check, 'os')
+    @mock.patch.object(rapidlib.health_check.health_check, 'os')
     @mock.patch.object(dummy_callables, 'verify_fileaccess')
     def test_env_variable(self, mocked_verify_fileaccess, mocked_os):
         mocked_os.environ = {'PASSWORD': 'dummy_pass'}
-        health_checks = make_health_checker(self.USING_ENV_VAR)
-        health = health_checks()
+        health = check_health(self.USING_ENV_VAR)
         self.assertTrue(health['status'])
         mocked_verify_fileaccess.assert_called_with(
             host='localhost',
@@ -89,11 +90,11 @@ class TestLoadingFromDict(unittest.TestCase):
                                 'host': 'localhost',
                                 'passwd': 'ΧΧΧΧ'
                             },
-                        'callable': 'venus.verify_fileaccess'
+                        'callable': 'rapidlib.health_check.verify_fileaccess'
                     },
                 'a_malfunctioning_example':
                     {
-                        'callable': 'venus.raising_exception'
+                        'callable': 'rapidlib.health_check.raising_exception'
                     }
             }
     }
@@ -103,10 +104,10 @@ class TestLoadingFromDict(unittest.TestCase):
     def test_invalid_instructions(self):
         for instruction in self.INVALID_INSTRUCTIONS:
             with self.assertRaises(HealthCheckerError):
-                make_health_checker(instruction)
+                _make_health_checker(instruction)
 
     def test_loading_from_dict(self):
-        health_checks = make_health_checker(self.VALID_INSTRUCTIONS)
+        health_checks = _make_health_checker(self.VALID_INSTRUCTIONS)
         self.assertEqual(len(health_checks), 2)
         retrieved_names = [hc.name for hc in health_checks]
         expected_names = ['a_malfunctioning_example', 'check_redis_connection']
@@ -127,29 +128,31 @@ class TestLoadingFromJson(unittest.TestCase):
 
     def test_unsupported_filename(self):
         with self.assertRaises(HealthCheckerError):
-            make_health_checker('_unsupported')
+            check_health('_unsupported')
 
     def test_non_existing_json(self):
         with self.assertRaises(HealthCheckerError):
-            make_health_checker('_unsupported.json')
+            check_health('_unsupported.json')
 
     def test_invalid_json(self):
         for invalid_file in self.INALID_JSONS:
             with self.assertRaises(HealthCheckerError):
-                make_health_checker(invalid_file)
+                check_health(invalid_file)
 
-    def test_unhealthy_from_json(self):
-        health_checks = make_health_checker(self.UNHEALTHY_JSON)
+    def test_make_health_checker(self):
+        health_checks = _make_health_checker(self.UNHEALTHY_JSON)
         self.assertEqual(len(health_checks), 2)
         retrieved_names = [hc.name for hc in health_checks]
         expected_names = ['a_malfunctioning_example', 'check_redis_connection']
         self.assertListEqual(sorted(retrieved_names), sorted(expected_names))
-        health = health_checks()
+
+    def test_unhealthy_from_json(self):
+        health = check_health(self.UNHEALTHY_JSON)
         self.assertTrue(isinstance(health['status'], bool))
         self.assertFalse(health['status'])
 
     def test_healthy_from_json(self):
-        health_checks = make_health_checker(self.HEALTHY_JSON)
+        health_checks = _make_health_checker(self.HEALTHY_JSON)
         self.assertEqual(len(health_checks), 2)
         retrieved_names = [hc.name for hc in health_checks]
         expected_names = ['check_mysql',
@@ -157,25 +160,22 @@ class TestLoadingFromJson(unittest.TestCase):
         self.assertListEqual(sorted(retrieved_names),
                              sorted(expected_names))
 
-        health = health_checks()
-
+        health = check_health(self.HEALTHY_JSON)
         self.assertTrue(isinstance(health['status'], bool))
         self.assertTrue(health['status'])
 
     def test_nonexisting_env_variable(self):
         with self.assertRaises(HealthCheckerError):
-            make_health_checker(self.USING_ENV_VAR)
+            check_health(self.USING_ENV_VAR)
 
-    @mock.patch.object(venus.health_check, 'os')
+    @mock.patch.object(rapidlib.health_check.health_check, 'os')
     @mock.patch.object(dummy_callables, 'verify_fileaccess')
     def test_env_variable(self, mocked_verify_fileaccess, mocked_os):
         mocked_os.environ = {'PASSWORD': 'dummy_pass'}
-        health_checks = make_health_checker(self.USING_ENV_VAR)
-        health = health_checks()
+        health = check_health(self.USING_ENV_VAR)
         self.assertTrue(health['status'])
         mocked_verify_fileaccess.assert_called_with(
             host='localhost',
             user='root',
             passwd='dummy_pass'
         )
-

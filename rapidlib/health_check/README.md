@@ -3,15 +3,14 @@
 
 #### Features
 
-Exposes a function called make_health_checker which receives a description of
+Exposes a function called check_health which receives a description of
 the applicable tests which can be passed as yaml or json files or as a python
-dictionary.  This function returns a function object which can be called using
-the () notation to run all the health checks and return the applicable status
+dictionary.  This function returns a description of the health of the system 
 as a python dictionary.
 
-Examples of health check descriptions:
+#### Examples of health check descriptions:
 
-yaml sample: health_check.yaml
+###### yaml sample
 
 ```yaml
 health_checks:
@@ -22,7 +21,7 @@ health_checks:
         passwd: $PASSWORD
 ```
 
-json sample: health_check.json
+###### json sample
 ```json
 {
    "health_checks":{
@@ -36,7 +35,7 @@ json sample: health_check.json
 }
 ```
 
-python dict sample:
+###### python dict:
 
 ```python
 health_checks = {
@@ -68,9 +67,14 @@ def check_redis(server, passwd):
 You can now use this library using any of the supported formats (yaml - json - 
 dict) to build a checker and call it using the returned function object:
 
-```
-checker = make_health_checker('health_check.yaml')
-health_check = checker()
+```python
+from rapidlib.health_check import check_health
+from rapidlib.health_check import HealthCheckerError
+
+try:
+    health = check_health('health_check.yaml')
+except HealthCheckerError as ex:
+    print(ex)
 ``` 
 
 #### Exception handling

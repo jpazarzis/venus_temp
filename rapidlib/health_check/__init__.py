@@ -1,11 +1,10 @@
-from .health_check import make_health_checker
+from .health_check import check_health
 from .health_check import HealthCheckerError
 
 __all__ = [
-    'make_health_checker',
+    'check_health',
     'HealthCheckerError'
 ]
-
 
 __doc__ = """
 health_checker - A library to allow for automatic health checks.
@@ -13,10 +12,9 @@ health_checker - A library to allow for automatic health checks.
 
 Features
 -------------
-Exposes a function called make_health_checker which receives a description of
+Exposes a function called check_health which receives a description of
 the applicable tests which can be passed as yaml or json files or as a python
-dictionary.  This function returns a function object which can be called using
-the () notation to run all the health checks and return the applicable status
+dictionary.  This function returns a description of the health of the system
 as a python dictionary.
 
 Examples of health check descriptions:
@@ -64,8 +62,8 @@ Example of a health check callable:
 You can now use this library using any of the supported formats (yaml - json -
 dict) to build a checker and call it using the returned function object:
 
-    >>> checker = make_health_checker('health_check.yaml')
-    >>> health_check = checker()
+    >>> health = check_health('health_check.yaml')
+
 
 Exception handling
 ------------------

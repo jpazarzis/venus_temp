@@ -1,13 +1,13 @@
 {
    "check_redis_connection":{
-      "callable":"venus.verify_fileaccess",
+      "callable":'rapidlib.health_check.verify_fileaccess',
       "parameters":{
-         "host":"localhost",
+         "host":"localhost"
          "user":"root",
          "passwd":"ΧΧΧΧ"
       }
    },
    "a_malfunctioning_example":{
-      "callable":"venus.raising_exception"
+      "callable":"rapidlib.health_check.raising_exception"
    }
 }

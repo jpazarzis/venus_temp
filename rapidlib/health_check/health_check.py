@@ -10,7 +10,30 @@ class HealthCheckerError(Exception):
     """Used for any exception raised by HealthChecker."""
 
 
-def make_health_checker(instructions):
+def check_health(instructions):
+    """Makes a health checker object.
+
+    :parameter instructions: Must be one of the following types:
+
+        - dict: Containing the health checks as a python dict.
+
+        - str: A filename of one of the supported formats:
+
+            - A yaml file containing the health checks.
+            - A json file containing the health checks.
+
+    :returns: A dictionary containing the related information.
+
+    :raises HealthCheckerError: Redirects any possible exception that can raised
+        to this generic exception.  Doing so to simplify the behaviour of the
+        called who should only have a single catching scope.
+    """
+
+    checker = _make_health_checker(instructions)
+    return checker()
+
+
+def _make_health_checker(instructions):
     """Makes a health checker object.
 
     :parameter instructions: Must be one of the following types:
