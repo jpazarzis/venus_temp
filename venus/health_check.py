@@ -112,7 +112,7 @@ class _HealthCheck:
         my_module = importlib.import_module(module_name)
         return getattr(my_module, function_name)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self):
         """Executed when the user calls the object using the () notation.
 
         :returns: A dictionary containing the related information.
