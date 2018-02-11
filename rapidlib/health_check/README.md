@@ -75,7 +75,36 @@ try:
     health = check_health('health_check.yaml')
 except HealthCheckerError as ex:
     print(ex)
-``` 
+```
+ 
+ 
+```python
+def verify_file_access(): 
+    return "OK"
+
+instructions = {
+    'health_checks':
+    {
+        'file_access': 
+        {
+            'callable': 'verify_file_access'
+        },
+    }
+}
+
+from rapidlib.health_check import check_health
+
+check_health(instructions)
+```
+
+```
+Out[13]: 
+{'status': False,
+ 'checks': {'file_access': {'status': False,
+   'exception': 'HealthCheckerError ',
+   'desc': ''}}}
+
+```
 
 #### Exception handling
 
