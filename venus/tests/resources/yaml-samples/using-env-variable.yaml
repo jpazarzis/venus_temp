@@ -4,7 +4,4 @@ health_checks:
       parameters:
         host: localhost
         user: root
-        passwd: PASSWORD
-  check_mysql:
-      callable: venus.tests.dummy_callables.check_mysql
-
+        passwd: $PASSWORD

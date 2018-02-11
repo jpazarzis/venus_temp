@@ -1,21 +1,25 @@
 """Tests venus.make_health_checker"""
 
+import unittest.mock as mock
 import os
 import unittest
 
 from venus import make_health_checker
 from venus import HealthCheckerError
-
+import venus.tests.dummy_callables as dummy_callables
+import venus.health_check
 
 class TestLoadingFromYaml(unittest.TestCase):
     CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
     YAML_DIR = os.path.join(CURRENT_DIR, 'resources', 'yaml-samples')
     UNHEALTHY_YAML = os.path.join(YAML_DIR, 'unhealthy.yaml')
     HEALTHY_YAML = os.path.join(YAML_DIR, 'healthy.yaml')
+    USING_ENV_VAR = os.path.join(YAML_DIR, 'using-env-variable.yaml')
 
     INALID_YAMLS = [
         os.path.join(YAML_DIR, 'invalid.yaml'),
         os.path.join(YAML_DIR, 'bad-structure.yaml'),
+        os.path.join(YAML_DIR, 'missing-callable.yaml'),
     ]
 
     def test_unsupported_filename(self):
@@ -54,6 +58,23 @@ class TestLoadingFromYaml(unittest.TestCase):
 
         self.assertTrue(isinstance(health['status'], bool))
         self.assertTrue(health['status'])
+
+    def test_nonexisting_env_variable(self):
+        with self.assertRaises(HealthCheckerError):
+            make_health_checker(self.USING_ENV_VAR)
+
+    @mock.patch.object(venus.health_check, 'os')
+    @mock.patch.object(dummy_callables, 'verify_fileaccess')
+    def test_env_variable(self, mocked_verify_fileaccess, mocked_os):
+        mocked_os.environ = {'PASSWORD': 'dummy_pass'}
+        health_checks = make_health_checker(self.USING_ENV_VAR)
+        health = health_checks()
+        self.assertTrue(health['status'])
+        mocked_verify_fileaccess.assert_called_with(
+            host='localhost',
+            user='root',
+            passwd='dummy_pass'
+        )
 
 
 class TestLoadingFromDict(unittest.TestCase):
@@ -97,6 +118,7 @@ class TestLoadingFromJson(unittest.TestCase):
     JSON_DIR = os.path.join(CURRENT_DIR, 'resources', 'json-samples')
     UNHEALTHY_JSON = os.path.join(JSON_DIR, 'unhealthy.json')
     HEALTHY_JSON = os.path.join(JSON_DIR, 'healthy.json')
+    USING_ENV_VAR = os.path.join(JSON_DIR, 'using-env-variable.json')
 
     INALID_JSONS = [
         os.path.join(JSON_DIR, 'invalid.json'),
@@ -139,3 +161,21 @@ class TestLoadingFromJson(unittest.TestCase):
 
         self.assertTrue(isinstance(health['status'], bool))
         self.assertTrue(health['status'])
+
+    def test_nonexisting_env_variable(self):
+        with self.assertRaises(HealthCheckerError):
+            make_health_checker(self.USING_ENV_VAR)
+
+    @mock.patch.object(venus.health_check, 'os')
+    @mock.patch.object(dummy_callables, 'verify_fileaccess')
+    def test_env_variable(self, mocked_verify_fileaccess, mocked_os):
+        mocked_os.environ = {'PASSWORD': 'dummy_pass'}
+        health_checks = make_health_checker(self.USING_ENV_VAR)
+        health = health_checks()
+        self.assertTrue(health['status'])
+        mocked_verify_fileaccess.assert_called_with(
+            host='localhost',
+            user='root',
+            passwd='dummy_pass'
+        )
+

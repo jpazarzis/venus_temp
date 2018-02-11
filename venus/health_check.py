@@ -1,5 +1,6 @@
 """Implements the health check functionality."""
 
+import os
 import importlib
 import json
 import yaml
@@ -94,6 +95,8 @@ class _HealthCheck:
     def __init__(self, name, **kwargs):
         self.name = name
         for key, value in kwargs.items():
+            if key == 'parameters':
+                value = self._preprocess_parameters(value)
             setattr(self, key, value)
 
     @property
@@ -108,9 +111,38 @@ class _HealthCheck:
         try:
             module_name, function_name = self.callable.rsplit('.', 1)
         except (TypeError, ValueError):
-            raise TypeError
+            raise HealthCheckerError
         my_module = importlib.import_module(module_name)
         return getattr(my_module, function_name)
+
+    @classmethod
+    def _preprocess_parameters(cls, parameters):
+        """Pre-processing value if needed.
+
+        By convention a dollar sign ($) prefixed value points to an environment
+        variable otherwise the value will be considered hard coded and this
+        function will make no changes to it.
+
+        :parameter: parameters (dict): Key-value pairs representing the
+            parameters to pass to the callable.
+
+        :returns: A python dict identical to the passed-in parameters containing
+            the preprocessed values where possible.
+
+        :raises: HealthCheckerError: Environment value does not exist.
+        """
+        preprocessed_parameters = {}
+        for key, value in parameters.items():
+            if str(value).strip().startswith('$'):
+                try:
+                    env_variable = str(value).strip()[1:]
+                    value = os.environ[env_variable]
+                except KeyError:
+                    raise HealthCheckerError(
+                        "Env variable %s not found" % env_variable
+                    )
+            preprocessed_parameters[key] = value
+        return preprocessed_parameters
 
     def __call__(self):
         """Executed when the user calls the object using the () notation.
