@@ -1,8 +1,8 @@
+"""Implements the health check functionality."""
+
 import importlib
 import json
 import yaml
-
-_SUPPORTED_FILE_EXTENSIONS = ['.yaml', '.json']
 
 
 class HealthCheckerError(Exception):
@@ -17,6 +17,14 @@ def make_health_checker(instructions):
         - str: A filename of one of the supported formats:
             - A yaml file containing the health checks.
             - A json file containing the health checks.
+
+    :returns: A function object encapsulating the health check rules as they are
+        described in the instructions.  Calling this object returns a dictionary
+        consisting of the description of the health check.  The most important
+        key in it is called status and points to a boolean value which
+        designates a healthy (True) or unhealthy (False) system.  Also contains
+        all the specified checks with their underlined details and individual
+        status.
 
     :raises HealthCheckerError: Redirects any possible exception that can raised
         to this generic exception.  Doing so to simplify the behaviour of the
@@ -50,7 +58,13 @@ def make_health_checker(instructions):
 
 
 class _HealthCheckCollection(list):
-    """Holds a collection of health checks."""
+    """Holds a collection of health checks.
+
+    This is the function object that the user of this library receives when he
+    makes a health checker. It consists of a list of the health checks that each
+    of them will be executed when the object is called.  If all the checks are
+    healthy then the status key of the response will be True (False otherwise).
+    """
 
     def __call__(self):
         """Allows for 'function object' behaviour.
