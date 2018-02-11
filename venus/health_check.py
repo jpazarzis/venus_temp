@@ -100,13 +100,15 @@ class _HealthCheck:
     def function_to_execute(self):
         """The function that is specified by the configuration.
 
+        :raises: TypeError: When unable to resolve the function.
+
         :returns: A callable that is loaded using the path that is specified
             in the configuration file or the dict used.
         """
         try:
             module_name, function_name = self.callable.rsplit('.', 1)
         except (TypeError, ValueError):
-            raise TypeError("Need a valid target to patch.")
+            raise TypeError
         my_module = importlib.import_module(module_name)
         return getattr(my_module, function_name)
 
