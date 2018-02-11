@@ -1,0 +1,9 @@
+check_redis_connection:
+    callable: venus.verify_fileaccess
+    parameters:
+      host: localhost
+      user: root
+      passwd: ΧΧΧΧ
+a_malfunctioning_example:
+    callable: venus.raising_exception
+
