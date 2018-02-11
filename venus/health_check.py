@@ -81,11 +81,7 @@ class _HealthCheckCollection(list):
 
 
 class _HealthCheck:
-    """Encapsulates the details of an individual health check.
-
-    The health check which w
-
-    """
+    """Encapsulates the details of an individual health check."""
 
     def __init__(self, name, **kwargs):
         self.name = name
