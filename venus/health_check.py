@@ -98,6 +98,11 @@ class _HealthCheck:
 
     @property
     def function_to_execute(self):
+        """The function that is specified by the configuration.
+
+        :returns: A callable that is loaded using the path that is specified
+            in the configuration file or the dict used.
+        """
         try:
             module_name, function_name = self.callable.rsplit('.', 1)
         except (TypeError, ValueError):
@@ -106,14 +111,24 @@ class _HealthCheck:
         return getattr(my_module, function_name)
 
     def __call__(self, *args, **kwargs):
+        """Executed when the user calls the object using the () notation.
+
+        :returns: A dictionary containing the related information.
+        """
         result = {}
         try:
             if hasattr(self, 'parameters'):
-                _ = self.function_to_execute(**self.parameters)
+                self.function_to_execute(**self.parameters)
             else:
-                _ = self.function_to_execute()
+                self.function_to_execute()
+            # If the function to execute completes without raising an exception
+            # we do not need any further information aside from marking its
+            # status as True.
             result['status'] = True
         except Exception as ex:
+            # The function to execute raised an exception so we need to inform
+            # the user for it by adding the necessary keys to the dictionary
+            # that will be returned to him.
             if isinstance(ex, Exception):
                 exception_type = type(ex).__name__
             else:
