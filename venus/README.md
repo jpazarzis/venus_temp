@@ -13,7 +13,7 @@ Examples of health check descriptions:
 
 yaml sample: health_check.yaml
 
-```
+```yaml
 health_checks:
   check_redis_connection:
       callable: health_checks.check_redis
@@ -38,7 +38,7 @@ json sample: health_check.json
 
 python dict sample:
 
-```
+```python
 health_checks = {
    "health_checks":{
       "check_redis_connection":{
@@ -52,9 +52,18 @@ health_checks = {
 ```
 
 Example of a health check callable:
-```
+```python
 def check_redis(server, passwd):
-    # Apply your checks and return a dict
+    """Applies a specific check.
+    
+    :parameter:  server
+    :parameter:  passwd
+    
+    Specified in the health check description (yaml, json or dict) using the 
+    parameters key.
+    
+    :returns: A python dictionary.
+    """
 ```
 You can now use this library using any of the supported formats (yaml - json - 
 dict) to build a checker and call it using the returned function object:
